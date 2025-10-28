@@ -1,10 +1,24 @@
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 
 class CartPage:
-    CHECKOUT_BUTTON = "/html/body/div/div/div/div[2]/div[2]/div/div[2]/div/div/div/div[3]/div/div[2]/button"
 
-    def __init__(self, driver):
+    def __init__(self, driver, timeout=20):
         self.driver = driver
+        self.wait = WebDriverWait(driver, timeout)
 
-    def checkout_button_exists(self):
-        return len(self.driver.find_elements(By.XPATH, self.CHECKOUT_BUTTON)) > 0
+    @property
+    def cart_title(self):
+        return self.wait.until(
+            EC.visibility_of_element_located(
+                (By.XPATH, "//h2[normalize-space()='Ваш кошик товарів']")
+            )
+        )
+
+    def cart_title_exists(self):
+        try:
+            return self.cart_title.is_displayed()
+        except:
+            return False
