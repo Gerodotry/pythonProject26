@@ -1,35 +1,31 @@
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import pytest
 
-from pages.home_page import HomePage
-from pages.product_page import ProductPage
-from pages.cart_page import CartPage
-
-driver = None
-home = None
-product = None
-cart = None
-def setup_module():
-    global driver, home, product, cart
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-    driver.maximize_window()
-    home = HomePage(driver)
-    product = ProductPage(driver)
-    cart = CartPage(driver)
-def teardown_module():
-    driver.quit()
-def test_step1_open_product():
-    home.open()
-    time.sleep(2)
-    home.click_first_product()
-    time.sleep(3)
+@pytest.mark.e2e
+def test_step1_open_product(home_page, driver):
+    wait = WebDriverWait(driver, 20)
+    home_page.open()
+    home_page.click_first_product()
+    wait.until(EC.url_matches(r"/ua/shop/.+\.html$"))
     assert "/ua/shop/" in driver.current_url and driver.current_url.endswith(".html"), \
-        " Не потрапили на сторінку товару!"
-def test_step2_buy_btn_exists():
-    assert product.buy_button_exists(), " Кнопка 'Купити' не знайдена!"
-def test_step3_buy_and_checkout_btn():
+        "Не потрапили на сторінку товару!"
+    print("Сторінка товару успішно відкрита.")
+@pytest.mark.e2e
+def test_step2_buy_btn_exists(product, driver):
+    wait = WebDriverWait(driver, 15)
+
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-product-buy-button]")))
+
+    assert product.buy_button_exists(), "Кнопка 'Купити' не знайдена!"
+
+@pytest.mark.e2e
+def test_step3_buy_and_checkout_btn(product, cart, driver):
+    wait = WebDriverWait(driver, 15)
+
     product.click_buy()
-    time.sleep(5)
-    assert cart.checkout_button_exists(), " Кнопка 'Оформити покупку' не знайдена!"
+
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-cart-product-item]")))
+
+    assert cart.cart_title_exists(), "Кошик не відкрився!"

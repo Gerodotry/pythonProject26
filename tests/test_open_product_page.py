@@ -1,35 +1,28 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.action_chains import ActionChains
-import time
+import pytest
+@pytest.mark.e2e
+def test_search_kley(driver):
+    wait = WebDriverWait(driver, 15)
+    driver.get("https://epicentrk.ua/ua/")
 
-def test_search_kley():
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-    driver.maximize_window()
-
-    driver.get("https://epicentrk.ua/")
-    time.sleep(3)
-    search_input = driver.find_element(By.CSS_SELECTOR, "input[type='search']")
-    search_input.send_keys("клей")
-    time.sleep(1)
-    search_button = driver.find_element(By.CSS_SELECTOR, "button[aria-label='Пошук']")
-    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", search_button)
-    time.sleep(0.5)
-    button_svg = driver.find_element(By.XPATH, "//button[@aria-label='Пошук']//*[name()='svg']")
-    ActionChains(driver).move_to_element(button_svg).pause(0.1).click().perform()
-    print("✅ Клік по кнопці пошуку виконано!")
-    WebDriverWait(driver, 10).until(
-        EC.url_contains("/ua/shop/kley/")
+    search_input = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input[data-ui-input][type='search']"))
     )
-    current_url = driver.current_url
-    print("🔎 Поточний URL:", current_url)
+    search_input.clear()
+    search_input.send_keys("клей")
 
-    assert "/ua/shop/kley/" in current_url, \
-        f"❌ Помилка переходу: {current_url}"
+    search_button = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Пошук']"))
+    )
+    search_button.click()
 
-    time.sleep(3)
-    driver.quit()
+    products = wait.until(
+        EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, "a[data-category-link='true'][title*='Клей']")
+        )
+    )
+
+    assert any("клей" in p.text.lower() for p in products), "Не знайдено товарів із 'клей'"
+    print(f"✅ Знайдено {len(products)} товарів зі словом 'клей'")
