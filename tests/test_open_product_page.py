@@ -1,38 +1,28 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-
-
-def test_search_kley():
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-    driver.maximize_window()
-
-    wait = WebDriverWait(driver, 20)
-
+import pytest
+@pytest.mark.e2e
+def test_search_kley(driver):
+    wait = WebDriverWait(driver, 15)
     driver.get("https://epicentrk.ua/ua/")
 
     search_input = wait.until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='search']"))
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input[data-ui-input][type='search']"))
     )
+    search_input.clear()
     search_input.send_keys("клей")
 
-    search_button_svg = wait.until(
-        EC.element_to_be_clickable(
-            (By.XPATH, "//button[@aria-label='Пошук']//*[name()='svg']")
+    search_button = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Пошук']"))
+    )
+    search_button.click()
+
+    products = wait.until(
+        EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, "a[data-category-link='true'][title*='Клей']")
         )
     )
-    search_button_svg.click()
-    print(" Клік по кнопці пошуку виконано!")
 
-
-    wait.until(
-        EC.presence_of_element_located(
-            (By.XPATH, "//div[@itemtype='https://schema.org/Product']")
-        )
-    )
-    print(" Результати пошуку завантажені!")
-
-    driver.quit()
+    assert any("клей" in p.text.lower() for p in products), "Не знайдено товарів із 'клей'"
+    print(f"✅ Знайдено {len(products)} товарів зі словом 'клей'")
